@@ -312,7 +312,7 @@ const ChatAssistant = () => {
                   placeholder="Type your message..."
                   value={inputVal}
                   onChange={(e) => setInputVal(e.target.value)}
-                  className="flex-1 px-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="flex-1 px-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base md:text-sm"
                 />
                 <button 
                   type="submit"
@@ -440,7 +440,7 @@ const Footer = () => (
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-[100dvh] bg-white font-sans text-gray-900 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
       <Navbar />
       <Hero />
       <TrustBadges />
