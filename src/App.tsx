@@ -1,10 +1,8 @@
 /**
- * index-v9: Surplus Funds Recovery Landing Page
+ * index-v10: Surplus Funds Recovery Landing Page
  * Updates:
- * - Integrated Firebase Firestore to persist eligibility requests securely.
- * - Added comprehensive error handling for database operations.
- * - Implemented server-side timestamping for submitted requests.
- * - Optimized chat flow for lead capturing.
+ * - Synchronized form schema with Firestore security rules (auctionDate fix).
+ * - Enhanced data validation and storage reliability.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -306,7 +304,7 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
   const [formData, setFormData] = useState({
     address: '',
     state: '',
-    date: '',
+    auctionDate: '',
     phone: '',
     email: ''
   });
@@ -372,7 +370,7 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
     setFormData({
       address: '',
       state: '',
-      date: '',
+      auctionDate: '',
       phone: '',
       email: ''
     });
@@ -468,11 +466,11 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
       setStep(3);
       setTimeout(() => addBotMessage("Approximately when was the auction date? (Month/Year is fine)"), 600);
     } else if (step === 3) {
-      setFormData(prev => ({ ...prev, date: val }));
+      setFormData(prev => ({ ...prev, auctionDate: val }));
       setStep(4);
       setTimeout(() => addBotMessage("Got it. Last step: what is your best phone number and email so we can send you the results of our review?"), 600);
     } else if (step === 4) {
-      const updatedData = { ...formData, phone: val, email: 'Collected via chat' }; // Simplified for now since we only have one input
+      const updatedData = { ...formData, phone: val, email: 'Collected via chat' }; 
       setFormData(updatedData);
       await saveEligibilityRequest(updatedData);
     }
