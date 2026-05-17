@@ -1,3 +1,7 @@
+/* 
+ * index-v5: Global styles for Surplus Funds Recovery.
+ * Updates: Implemented theme extensions and mobile layout height fixes.
+ */
 @import "tailwindcss";
 
 @theme {

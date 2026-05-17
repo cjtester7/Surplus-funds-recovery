@@ -1,6 +1,9 @@
 /**
- * @license
- * SPDX-License-Identifier: Apache-2.0
+ * index-v5: Surplus Funds Recovery Landing Page
+ * Updates:
+ * - Implemented minimize/maximize logic for the chatbot via isChatOpen state.
+ * - Added a close button to the chat bot header for better navigation back to the landing page.
+ * - Optimized transitions between the hero section and the chatbot overlay.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -26,7 +29,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 // --- Components ---
 
-const Navbar = () => (
+const Navbar = ({ onOpenChat }: { onOpenChat: () => void }) => (
   <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between h-16 items-center">
@@ -40,7 +43,7 @@ const Navbar = () => (
           <a href="#how-it-works" className="hover:text-blue-600 transition-colors">How it Works</a>
           <a href="#faq" className="hover:text-blue-600 transition-colors">FAQ</a>
           <button 
-            onClick={() => document.getElementById('chat-section')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={onOpenChat}
             className="bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 transition-all shadow-sm"
           >
             Check Eligibility
@@ -51,7 +54,7 @@ const Navbar = () => (
   </nav>
 );
 
-const Hero = () => (
+const Hero = ({ onOpenChat }: { onOpenChat: () => void }) => (
   <section className="pt-32 pb-20 px-4 bg-[#FDFCFB]">
     <div className="max-w-4xl mx-auto text-center">
       <motion.div
@@ -70,7 +73,7 @@ const Hero = () => (
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button 
-            onClick={() => document.getElementById('chat-section')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={onOpenChat}
             className="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2 group"
           >
             Check My Eligibility
@@ -149,7 +152,7 @@ const HowItWorks = () => (
   </section>
 );
 
-const ChatAssistant = () => {
+const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
   const [messages, setMessages] = useState<any[]>([]);
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -201,14 +204,16 @@ const ChatAssistant = () => {
 
   useEffect(() => {
     // Initial message
-    setTimeout(() => {
-      addBotMessage("Hi — many homeowners are unaware they may still be owed money after a foreclosure auction. I can help answer questions and explain how the process works.", [
-        "What are surplus funds?",
-        "How do I know if money is owed?",
-        "Check my property",
-        "Speak with someone"
-      ]);
-    }, 500);
+    if (messages.length === 0) {
+      setTimeout(() => {
+        addBotMessage("Hi — many homeowners are unaware they may still be owed money after a foreclosure auction. I can help answer questions and explain how the process works.", [
+          "What are surplus funds?",
+          "How do I know if money is owed?",
+          "Check my property",
+          "Speak with someone"
+        ]);
+      }, 500);
+    }
   }, []);
 
   const handleOptionClick = (option: string) => {
@@ -269,89 +274,92 @@ const ChatAssistant = () => {
   };
 
   return (
-    <div id="chat-section" className="py-12 md:py-24 px-4 bg-gray-50 flex justify-center">
-      <div className="w-full max-w-2xl">
-        <div 
-          id="chat-window-container" 
-          className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border border-gray-100 flex flex-col h-[550px] md:h-[600px] max-h-[70vh] md:max-h-[85vh] transition-all duration-300"
-        >
-          {/* Bot Header */}
-          <div className="bg-blue-600 p-6 flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <MessageCircle className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-lg">Homeowner Assistance Chat</h3>
-              <p className="text-blue-100 text-sm">Surplus Funds Information Assistant</p>
-            </div>
+    <div 
+      id="chat-window-container" 
+      className="bg-white rounded-3xl md:rounded-t-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border border-gray-100 flex flex-col h-full transition-all duration-300"
+    >
+      {/* Bot Header */}
+      <div className="bg-blue-600 p-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+            <MessageCircle className="w-5 h-5 text-white" />
           </div>
-
-          {/* Chat Window */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            <AnimatePresence>
-              {messages.map((msg, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20, scale: 0.95 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`max-w-[85%] rounded-2xl px-5 py-3 ${
-                    msg.role === 'user' 
-                      ? 'bg-blue-600 text-white rounded-tr-none' 
-                      : 'bg-gray-100 text-gray-800 rounded-tl-none'
-                  }`}>
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                    {msg.options && (
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {msg.options.map((opt: string, j: number) => (
-                          <button
-                            key={j}
-                            onClick={() => handleOptionClick(opt)}
-                            className="text-xs bg-white text-blue-600 px-3 py-1.5 rounded-full border border-blue-100 hover:bg-blue-50 transition-colors font-medium shadow-sm"
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input Area */}
-          <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-            {step === 5 ? (
-              <div className="text-center py-4 bg-green-50 rounded-xl text-green-700 font-medium flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-5 h-5" />
-                Request Submitted Successfully
-              </div>
-            ) : (
-              <form onSubmit={handleInputSubmit} className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Type your message..."
-                  value={inputVal}
-                  onChange={(e) => setInputVal(e.target.value)}
-                  onFocus={handleInputFocus}
-                  className="flex-1 px-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base md:text-sm"
-                />
-                <button 
-                  type="submit"
-                  className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              </form>
-            )}
+          <div>
+            <h3 className="text-white font-bold text-base md:text-lg">Homeowner Assistance Chat</h3>
+            <p className="text-blue-100 text-xs md:text-sm">Surplus Funds Support</p>
           </div>
         </div>
-        <p className="mt-4 text-center text-xs text-gray-400 italic">
-          Disclaimer: This does not constitute legal advice. Results may vary based on county and state regulations.
-        </p>
+        {onMinimize && (
+          <button 
+            onClick={onMinimize}
+            className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        )}
+      </div>
+
+      {/* Chat Window */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+        <AnimatePresence>
+          {messages.map((msg, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`max-w-[85%] rounded-2xl px-5 py-3 ${
+                msg.role === 'user' 
+                  ? 'bg-blue-600 text-white rounded-tr-none' 
+                  : 'bg-gray-100 text-gray-800 rounded-tl-none'
+              }`}>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                {msg.options && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {msg.options.map((opt: string, j: number) => (
+                      <button
+                        key={j}
+                        onClick={() => handleOptionClick(opt)}
+                        className="text-xs bg-white text-blue-600 px-3 py-1.5 rounded-full border border-blue-100 hover:bg-blue-50 transition-colors font-medium shadow-sm"
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area */}
+      <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+        {step === 5 ? (
+          <div className="text-center py-4 bg-green-50 rounded-xl text-green-700 font-medium flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-5 h-5" />
+            Review Requested Successfully
+          </div>
+        ) : (
+          <form onSubmit={handleInputSubmit} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="How can we help?"
+              value={inputVal}
+              onChange={(e) => setInputVal(e.target.value)}
+              onFocus={handleInputFocus}
+              className="flex-1 px-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base md:text-sm"
+            />
+            <button 
+              type="submit"
+              className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -464,24 +472,58 @@ const Footer = () => (
 );
 
 export default function App() {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  const toggleChat = () => setIsChatOpen(!isChatOpen);
+
   return (
     <div className="min-h-[100dvh] bg-white font-sans text-gray-900 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
-      <Navbar />
-      <Hero />
-      <TrustBadges />
-      <HowItWorks />
-      <ChatAssistant />
-      <FAQ />
+      <Navbar onOpenChat={() => setIsChatOpen(true)} />
+      
+      <main>
+        <Hero onOpenChat={() => setIsChatOpen(true)} />
+        <TrustBadges />
+        <HowItWorks />
+        
+        {/* Inline Chat Section (Desktop context) */}
+        <div id="chat-section" className="py-12 md:py-24 px-4 bg-gray-50 flex justify-center">
+          <div className="w-full max-w-2xl h-[600px]">
+            <ChatAssistant />
+            <p className="mt-6 text-center text-xs text-gray-400 italic max-w-md mx-auto">
+              Disclaimer: This does not constitute legal advice. Results may vary based on local regulations.
+            </p>
+          </div>
+        </div>
+
+        <FAQ />
+      </main>
+      
       <Footer />
       
-      {/* Floating Action Button (Mobile) */}
-      <div className="fixed bottom-6 right-6 md:hidden z-40">
-        <button 
-          onClick={() => document.getElementById('chat-section')?.scrollIntoView({ behavior: 'smooth' })}
-          className="w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center animate-bounce"
+      {/* Overlay Chatbot (Minimize/Maximize) */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: 100, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 100, scale: 0.95 }}
+            className="fixed inset-0 md:inset-auto md:bottom-24 md:right-8 md:w-[400px] md:h-[600px] z-[100] flex flex-col bg-white md:rounded-3xl shadow-2xl"
+          >
+            <ChatAssistant onMinimize={toggleChat} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Action Button */}
+      <div className="fixed bottom-6 right-6 z-[110]">
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={toggleChat}
+          className={`w-14 h-14 ${isChatOpen ? 'bg-white text-blue-600 border border-gray-100' : 'bg-blue-600 text-white shadow-2xl'} rounded-full flex items-center justify-center transition-all duration-300`}
         >
-          <MessageCircle className="w-7 h-7" />
-        </button>
+          {isChatOpen ? <X className="w-7 h-7" /> : <MessageCircle className="w-7 h-7" />}
+        </motion.button>
       </div>
     </div>
   );
