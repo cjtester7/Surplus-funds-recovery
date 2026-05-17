@@ -1,0 +1,6 @@
+{
+  "name": "Surplus Funds Recovery",
+  "description": "Educational landing page helping homeowners recover excess proceeds after a foreclosure sale.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
