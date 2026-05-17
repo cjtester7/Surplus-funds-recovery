@@ -177,14 +177,17 @@ const ChatAssistant = () => {
   }, [messages]);
 
   const handleInputFocus = () => {
-    // On mobile, ensure the chat container is scrolled into a good view when focused
+    // On mobile, maximize visibility and ensure the chat container is centered
     if (window.innerWidth < 768) {
       setTimeout(() => {
-        document.getElementById('chat-window-container')?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
-        });
-      }, 300);
+        const container = document.getElementById('chat-window-container');
+        if (container) {
+          container.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      }, 500);
     }
   };
 
@@ -266,9 +269,12 @@ const ChatAssistant = () => {
   };
 
   return (
-    <div id="chat-section" className="py-12 md:py-24 px-4 bg-gray-50">
-      <div className="max-w-2xl mx-auto">
-        <div id="chat-window-container" className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col h-[500px] md:h-[600px] max-h-[85vh]">
+    <div id="chat-section" className="py-12 md:py-24 px-4 bg-gray-50 flex justify-center">
+      <div className="w-full max-w-2xl">
+        <div 
+          id="chat-window-container" 
+          className="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border border-gray-100 flex flex-col h-[550px] md:h-[600px] max-h-[70vh] md:max-h-[85vh] transition-all duration-300"
+        >
           {/* Bot Header */}
           <div className="bg-blue-600 p-6 flex items-center gap-4">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
