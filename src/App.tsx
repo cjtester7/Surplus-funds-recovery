@@ -163,12 +163,30 @@ const ChatAssistant = () => {
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: "smooth", 
+        block: "nearest" 
+      });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timeoutId);
   }, [messages]);
+
+  const handleInputFocus = () => {
+    // On mobile, ensure the chat container is scrolled into a good view when focused
+    if (window.innerWidth < 768) {
+      setTimeout(() => {
+        document.getElementById('chat-window-container')?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 300);
+    }
+  };
 
   const addBotMessage = (text: string, options?: string[]) => {
     setMessages(prev => [...prev, { role: 'bot', text, options }]);
@@ -248,9 +266,9 @@ const ChatAssistant = () => {
   };
 
   return (
-    <div id="chat-section" className="py-24 px-4 bg-gray-50">
+    <div id="chat-section" className="py-12 md:py-24 px-4 bg-gray-50">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col h-[600px]">
+        <div id="chat-window-container" className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col h-[500px] md:h-[600px] max-h-[85vh]">
           {/* Bot Header */}
           <div className="bg-blue-600 p-6 flex items-center gap-4">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -312,6 +330,7 @@ const ChatAssistant = () => {
                   placeholder="Type your message..."
                   value={inputVal}
                   onChange={(e) => setInputVal(e.target.value)}
+                  onFocus={handleInputFocus}
                   className="flex-1 px-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base md:text-sm"
                 />
                 <button 
