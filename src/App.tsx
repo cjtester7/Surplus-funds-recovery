@@ -1,9 +1,10 @@
 /**
- * index-v5: Surplus Funds Recovery Landing Page
+ * index-v7: Surplus Funds Recovery Landing Page
  * Updates:
- * - Implemented minimize/maximize logic for the chatbot via isChatOpen state.
- * - Added a close button to the chat bot header for better navigation back to the landing page.
- * - Optimized transitions between the hero section and the chatbot overlay.
+ * - Added "Start New Conversation" functionality to reset chat state.
+ * - Added "End Conversation" functionality to gracefully complete session.
+ * - Implemented "Download Transcript to CSV" utility.
+ * - Enhanced Chat header with control actions for reset, download, and exit.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -23,7 +24,10 @@ import {
   Calendar,
   Phone,
   Mail,
-  MapPin
+  MapPin,
+  RefreshCw,
+  Download,
+  LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -202,6 +206,39 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
     setMessages(prev => [...prev, { role: 'user', text }]);
   };
 
+  const downloadTranscript = () => {
+    if (messages.length === 0) return;
+    
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Role,Message\n"
+      + messages.map(m => `"${m.role === 'bot' ? 'Assistant' : 'User'}","${m.text.replace(/"/g, '""')}"`).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `chat_transcript_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const startNewConversation = () => {
+    setMessages([]);
+    setStep(0);
+    setFormData({
+      address: '',
+      state: '',
+      date: '',
+      phone: '',
+      email: ''
+    });
+  };
+
+  const endConversation = () => {
+    addBotMessage("Thank you for reaching out to Surplus Recovery Specialists. We wish you the best. You can now close this chat or start a new review if needed.");
+    setStep(6); // Final state
+  };
+
   useEffect(() => {
     // Initial message
     if (messages.length === 0) {
@@ -214,9 +251,10 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
         ]);
       }, 500);
     }
-  }, []);
+  }, [messages.length]);
 
   const handleOptionClick = (option: string) => {
+    if (step === 6) return;
     addUserMessage(option);
     
     if (option === "What are surplus funds?") {
@@ -248,7 +286,7 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
 
   const handleInputSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputVal.trim()) return;
+    if (!inputVal.trim() || step === 6) return;
 
     addUserMessage(inputVal);
     const val = inputVal;
@@ -279,24 +317,52 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
       className="bg-white rounded-3xl md:rounded-t-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] overflow-hidden border border-gray-100 flex flex-col h-full transition-all duration-300"
     >
       {/* Bot Header */}
-      <div className="bg-blue-600 p-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-            <MessageCircle className="w-5 h-5 text-white" />
+      <div className="bg-blue-600 p-4 md:p-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+            <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-white font-bold text-base md:text-lg">Homeowner Assistance Chat</h3>
-            <p className="text-blue-100 text-xs md:text-sm">Surplus Funds Support</p>
+            <h3 className="text-white font-bold text-sm md:text-lg leading-tight">Assistance Chat</h3>
+            <p className="text-blue-100 text-[10px] md:text-xs">Surplus Funds Support</p>
           </div>
         </div>
-        {onMinimize && (
-          <button 
-            onClick={onMinimize}
-            className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        )}
+        
+        <div className="flex items-center gap-1 md:gap-2">
+          {messages.length > 0 && (
+            <>
+              <button 
+                onClick={downloadTranscript}
+                title="Download Transcript"
+                className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-colors"
+              >
+                <Download className="w-4 h-4 md:w-5 md:h-5" />
+              </button>
+              <button 
+                onClick={startNewConversation}
+                title="Start New Conversation"
+                className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-colors"
+              >
+                <RefreshCw className="w-4 h-4 md:w-5 md:h-5" />
+              </button>
+              <button 
+                onClick={endConversation}
+                title="End Conversation"
+                className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-colors"
+              >
+                <LogOut className="w-4 h-4 md:w-5 md:h-5" />
+              </button>
+            </>
+          )}
+          {onMinimize && (
+            <button 
+              onClick={onMinimize}
+              className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-colors ml-1"
+            >
+              <X className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Chat Window */}
@@ -337,10 +403,21 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
 
       {/* Input Area */}
       <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-        {step === 5 ? (
-          <div className="text-center py-4 bg-green-50 rounded-xl text-green-700 font-medium flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-5 h-5" />
-            Review Requested Successfully
+        {step >= 5 ? (
+          <div className="flex flex-col gap-3">
+            <div className={`text-center py-4 rounded-xl font-medium flex items-center justify-center gap-2 ${step === 5 ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
+              <CheckCircle2 className="w-5 h-5" />
+              {step === 5 ? 'Review Requested Successfully' : 'Conversation Ended'}
+            </div>
+            {step === 6 && (
+              <button 
+                onClick={startNewConversation}
+                className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-sm flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Start New Review
+              </button>
+            )}
           </div>
         ) : (
           <form onSubmit={handleInputSubmit} className="flex gap-2">
@@ -515,16 +592,25 @@ export default function App() {
       </AnimatePresence>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-[110]">
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={toggleChat}
-          className={`w-14 h-14 ${isChatOpen ? 'bg-white text-blue-600 border border-gray-100' : 'bg-blue-600 text-white shadow-2xl'} rounded-full flex items-center justify-center transition-all duration-300`}
-        >
-          {isChatOpen ? <X className="w-7 h-7" /> : <MessageCircle className="w-7 h-7" />}
-        </motion.button>
-      </div>
+      <AnimatePresence>
+        {!isChatOpen && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="fixed bottom-6 right-6 z-[110]"
+          >
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={toggleChat}
+              className="w-14 h-14 bg-blue-600 text-white shadow-2xl rounded-full flex items-center justify-center transition-all duration-300"
+            >
+              <MessageCircle className="w-7 h-7" />
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
