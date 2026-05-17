@@ -29,7 +29,8 @@ import {
   Printer,
   FileText,
   QrCode,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, serverTimestamp, doc, getDocFromServer } from 'firebase/firestore';
@@ -301,6 +302,7 @@ const HowItWorks = () => (
 const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
   const [messages, setMessages] = useState<any[]>([]);
   const [step, setStep] = useState(0);
+  const [isBotTyping, setIsBotTyping] = useState(false);
   const [formData, setFormData] = useState({
     address: '',
     state: '',
@@ -344,6 +346,13 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
     setMessages(prev => [...prev, { role: 'bot', text, options }]);
   };
 
+  const queueBotMessage = async (text: string, options?: string[], delay = 1000) => {
+    setIsBotTyping(true);
+    await new Promise(resolve => setTimeout(resolve, delay));
+    addBotMessage(text, options);
+    setIsBotTyping(false);
+  };
+
   const addUserMessage = (text: string) => {
     setMessages(prev => [...prev, { role: 'user', text }]);
   };
@@ -384,45 +393,33 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
   useEffect(() => {
     // Initial message
     if (messages.length === 0) {
-      setTimeout(() => {
-        addBotMessage("Hi — many homeowners are unaware they may still be owed money after a foreclosure auction. I can help answer questions and explain how the process works.", [
-          "What are surplus funds?",
-          "How do I know if money is owed?",
-          "Check my property",
-          "Speak with someone"
-        ]);
-      }, 500);
+      queueBotMessage("Hi — many homeowners are unaware they may still be owed money after a foreclosure auction. I can help answer questions and explain how the process works.", [
+        "What are surplus funds?",
+        "How do I know if money is owed?",
+        "Check my property",
+        "Speak with someone"
+      ], 800);
     }
   }, [messages.length]);
 
   const handleOptionClick = (option: string) => {
-    if (step === 6) return;
+    if (step === 6 || isBotTyping) return;
     addUserMessage(option);
     
     if (option === "What are surplus funds?") {
-      setTimeout(() => {
-        addBotMessage("Surplus funds (also called excess proceeds) are the money left over after a foreclosure auction once the bank is paid off. These funds legally belong to you.");
-        addBotMessage("Would you like to check if your property had surplus funds?", ["Yes, check my property", "Tell me more"]);
-      }, 600);
+      queueBotMessage("Surplus funds (also called excess proceeds) are the money left over after a foreclosure auction once the bank is paid off. These funds legally belong to you.", undefined, 1000)
+        .then(() => queueBotMessage("Would you like to check if your property had surplus funds?", ["Yes, check my property", "Tell me more"], 800));
     } else if (option === "How do I know if money is owed?") {
-      setTimeout(() => {
-        addBotMessage("We research county records and auction reports to determine the exact sale amount versus the debt. If there's a gap, that's your surplus.");
-        addBotMessage("Ready to check?", ["Check my property", "Not yet"]);
-      }, 600);
+      queueBotMessage("We research county records and auction reports to determine the exact sale amount versus the debt. If there's a gap, that's your surplus.", undefined, 1000)
+        .then(() => queueBotMessage("Ready to check?", ["Check my property", "Not yet"], 800));
     } else if (option === "Check my property" || option === "Yes, check my property") {
       setStep(1);
-      setTimeout(() => {
-        addBotMessage("Excellent. To start, what is the address of the property that went to auction?");
-      }, 600);
+      queueBotMessage("Excellent. To start, what is the address of the property that went to auction?", undefined, 800);
     } else if (option === "Speak with someone") {
-      setTimeout(() => {
-        addBotMessage("Of course. Please provide your phone number and we'll reach out for a private consultation.");
-        setStep(4);
-      }, 600);
+      queueBotMessage("Of course. Please provide your phone number and we'll reach out for a private consultation.", undefined, 1000)
+        .then(() => setStep(4));
     } else {
-       setTimeout(() => {
-        addBotMessage("I understand. Feel free to ask anything else or click 'Check my property' when ready.");
-      }, 600);
+      queueBotMessage("I understand. Feel free to ask anything else or click 'Check my property' when ready.", undefined, 800);
     }
   };
 
@@ -438,12 +435,24 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
         ...finalData,
         createdAt: serverTimestamp(),
       });
+
+      // Trigger Email Notification via Backend API
+      try {
+        await fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(finalData),
+        });
+      } catch (notifyError) {
+        console.error("Failed to trigger email notification:", notifyError);
+      }
+
       setStep(5);
-      setTimeout(() => addBotMessage("Review requested! We help determine whether funds may exist and will contact you shortly with our findings. No upfront fees ever."), 1000);
+      queueBotMessage("Review requested! We help determine whether funds may exist and will contact you shortly with our findings. No upfront fees ever.", undefined, 1000);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
       setSubmitError("We encountered a technical issue saving your request. Please try again or contact us directly.");
-      addBotMessage("I apologize, but I had trouble saving your request. Please try submitting again or contact help@surplusrecovery.org.");
+      queueBotMessage("I apologize, but I had trouble saving your request. Please try submitting again or contact help@surplusrecovery.org.", undefined, 1000);
     } finally {
       setIsSubmitting(false);
     }
@@ -451,7 +460,7 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
 
   const handleInputSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputVal.trim() || step === 6 || isSubmitting) return;
+    if (!inputVal.trim() || step === 6 || isSubmitting || isBotTyping) return;
 
     addUserMessage(inputVal);
     const val = inputVal;
@@ -460,15 +469,15 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
     if (step === 1) {
       setFormData(prev => ({ ...prev, address: val }));
       setStep(2);
-      setTimeout(() => addBotMessage("Thank you. What state is the property located in?"), 600);
+      queueBotMessage("Thank you. What state is the property located in?", undefined, 800);
     } else if (step === 2) {
       setFormData(prev => ({ ...prev, state: val }));
       setStep(3);
-      setTimeout(() => addBotMessage("Approximately when was the auction date? (Month/Year is fine)"), 600);
+      queueBotMessage("Approximately when was the auction date? (Month/Year is fine)", undefined, 800);
     } else if (step === 3) {
       setFormData(prev => ({ ...prev, auctionDate: val }));
       setStep(4);
-      setTimeout(() => addBotMessage("Got it. Last step: what is your best phone number and email so we can send you the results of our review?"), 600);
+      queueBotMessage("Got it. Last step: what is your best phone number and email so we can send you the results of our review?", undefined, 800);
     } else if (step === 4) {
       const updatedData = { ...formData, phone: val, email: 'Collected via chat' }; 
       setFormData(updatedData);
@@ -562,6 +571,31 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
               </div>
             </motion.div>
           ))}
+          {isBotTyping && (
+            <motion.div
+              initial={{ opacity: 0, x: -20, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              className="flex justify-start"
+            >
+              <div className="bg-gray-100 text-gray-500 rounded-2xl rounded-tl-none px-5 py-3 flex gap-1 items-center">
+                <motion.div 
+                  animate={{ opacity: [0.4, 1, 0.4] }} 
+                  transition={{ repeat: Infinity, duration: 1, delay: 0 }} 
+                  className="w-1.5 h-1.5 bg-gray-400 rounded-full" 
+                />
+                <motion.div 
+                  animate={{ opacity: [0.4, 1, 0.4] }} 
+                  transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} 
+                  className="w-1.5 h-1.5 bg-gray-400 rounded-full" 
+                />
+                <motion.div 
+                  animate={{ opacity: [0.4, 1, 0.4] }} 
+                  transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} 
+                  className="w-1.5 h-1.5 bg-gray-400 rounded-full" 
+                />
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
         <div ref={messagesEndRef} />
       </div>
@@ -603,10 +637,14 @@ const ChatAssistant = ({ onMinimize }: { onMinimize?: () => void }) => {
             />
             <button 
               type="submit"
-              disabled={isSubmitting}
-              className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95 disabled:opacity-50"
+              disabled={isSubmitting || isBotTyping}
+              className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95 disabled:opacity-50 flex items-center justify-center min-w-[48px]"
             >
-              <Send className="w-5 h-5" />
+              {isSubmitting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
             </button>
           </form>
         )}
