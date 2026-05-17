@@ -1,10 +1,10 @@
 /**
- * index-v7: Surplus Funds Recovery Landing Page
+ * index-v8: Surplus Funds Recovery Landing Page
  * Updates:
- * - Added "Start New Conversation" functionality to reset chat state.
- * - Added "End Conversation" functionality to gracefully complete session.
- * - Implemented "Download Transcript to CSV" utility.
- * - Enhanced Chat header with control actions for reset, download, and exit.
+ * - Added "Poster Mode" for physical outreach (Libraries, Community Centers).
+ * - Implemented a print-optimized layout for the poster component.
+ * - Added a "Print Poster" utility for easy physical distribution.
+ * - Enhanced mobile navigation to support the new toolkit.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -27,35 +27,136 @@ import {
   MapPin,
   RefreshCw,
   Download,
-  LogOut
+  LogOut,
+  Printer,
+  FileText,
+  QrCode
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // --- Components ---
 
-const Navbar = ({ onOpenChat }: { onOpenChat: () => void }) => (
-  <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+const Navbar = ({ onOpenChat, onTogglePoster, isPosterMode }: { onOpenChat: () => void, onTogglePoster: () => void, isPosterMode: boolean }) => (
+  <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 print:hidden">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between h-16 items-center">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => !isPosterMode && window.scrollTo(0,0)}>
           <div className="p-1.5 bg-blue-600 rounded-lg">
             <ShieldCheck className="w-5 h-5 text-white" />
           </div>
           <span className="font-bold text-gray-900 tracking-tight text-lg">Surplus Recovery</span>
         </div>
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
-          <a href="#how-it-works" className="hover:text-blue-600 transition-colors">How it Works</a>
-          <a href="#faq" className="hover:text-blue-600 transition-colors">FAQ</a>
-          <button 
-            onClick={onOpenChat}
-            className="bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 transition-all shadow-sm"
-          >
-            Check Eligibility
-          </button>
+        <div className="flex items-center gap-4 md:gap-8 text-sm font-medium text-gray-600">
+          {!isPosterMode && (
+            <>
+              <a href="#how-it-works" className="hidden md:block hover:text-blue-600 transition-colors">How it Works</a>
+              <button 
+                onClick={onTogglePoster}
+                className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                title="View Printable Poster"
+              >
+                <FileText className="w-4 h-4" />
+                <span className="hidden sm:inline">Poster Mode</span>
+              </button>
+              <button 
+                onClick={onOpenChat}
+                className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-all shadow-sm"
+              >
+                Check Eligibility
+              </button>
+            </>
+          )}
+          {isPosterMode && (
+            <button 
+              onClick={onTogglePoster}
+              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Back to Website
+            </button>
+          )}
         </div>
       </div>
     </div>
   </nav>
+);
+
+const PosterMode = () => (
+  <div className="pt-24 pb-12 bg-gray-100 min-h-screen flex flex-col items-center px-4 print:bg-white print:p-0">
+    <div className="bg-white p-8 md:p-16 shadow-2xl w-full max-w-[8.5in] border-[12px] border-blue-600 print:border-[20px] print:shadow-none print:m-0">
+      <div className="text-center space-y-8">
+        <div className="flex justify-center mb-4">
+          <div className="p-4 bg-blue-600 rounded-2xl">
+            <ShieldCheck className="w-12 h-12 text-white" />
+          </div>
+        </div>
+        
+        <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-tight uppercase tracking-tighter">
+          Was Your Home Sold at Auction?
+        </h1>
+        
+        <div className="h-2 w-32 bg-blue-600 mx-auto" />
+        
+        <p className="text-3xl md:text-4xl font-bold text-blue-700 italic">
+          You may be owed thousands of dollars in surplus funds.
+        </p>
+
+        <div className="grid grid-cols-1 gap-6 text-left max-w-2xl mx-auto py-8">
+          <div className="flex items-start gap-4">
+            <CheckCircle2 className="w-8 h-8 text-green-600 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Legal Right to Excess Proceeds</h3>
+              <p className="text-xl text-gray-600">Banks can only keep what you owe. The rest belongs to YOU.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-4">
+            <CheckCircle2 className="w-8 h-8 text-green-600 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">100% Free Eligibility Check</h3>
+              <p className="text-xl text-gray-600">We verify county records at no cost to determine if funds exist.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-4">
+            <CheckCircle2 className="w-8 h-8 text-green-600 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">No Upfront Fees</h3>
+              <p className="text-xl text-gray-600">We only get paid if we successfully help you recover your money.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 p-8 rounded-3xl border border-gray-200 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
+          <div className="flex-1">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Check Your Balance Today</h2>
+            <p className="text-xl text-gray-600 mb-4">Scan the code or visit our website to start your free review.</p>
+            <div className="flex flex-col gap-2 font-mono text-xl">
+              <span className="flex items-center gap-2 justify-center md:justify-start">
+                <Mail className="w-5 h-5 text-blue-600" /> help@surplusrecovery.org
+              </span>
+              <span className="flex items-center gap-2 justify-center md:justify-start font-bold">
+                <div className="px-3 py-1 bg-blue-600 text-white rounded">www.surplusrecovery.org</div>
+              </span>
+            </div>
+          </div>
+          <div className="w-40 h-40 bg-white border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-400 p-4">
+            <QrCode className="w-16 h-16 mb-2" />
+            <span className="text-[10px] uppercase font-bold text-center">Place QR Code Here</span>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-400 italic">
+          Disclaimer: Surplus Recovery Specialists is a private organization. We are not affiliated with any government agency or court.
+        </p>
+      </div>
+    </div>
+    
+    <button 
+      onClick={() => window.print()}
+      className="mt-8 flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-xl hover:bg-blue-700 transition-all print:hidden"
+    >
+      <Printer className="w-6 h-6" />
+      Print Poster (Standard 8.5" x 11")
+    </button>
+  </div>
 );
 
 const Hero = ({ onOpenChat }: { onOpenChat: () => void }) => (
@@ -500,15 +601,15 @@ const FAQ = () => {
   );
 };
 
-const Footer = () => (
-  <footer className="bg-gray-900 text-gray-300 py-16 px-4">
-    <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+const Footer = ({ onTogglePoster }: { onTogglePoster: () => void }) => (
+  <footer className="bg-gray-900 text-gray-300 py-16 px-4 print:hidden">
+    <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 text-center md:text-left">
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-center md:justify-start">
           <ShieldCheck className="w-6 h-6 text-blue-400" />
           <span className="font-bold text-white tracking-tight text-xl">Surplus Recovery</span>
         </div>
-        <p className="text-sm leading-relaxed max-w-xs text-gray-400">
+        <p className="text-sm leading-relaxed max-w-xs text-gray-400 mx-auto md:mx-0">
           We help homeowners navigate the recovery of excess proceeds from foreclosure sales. Trust-based, educational, and professional.
         </p>
       </div>
@@ -516,18 +617,30 @@ const Footer = () => (
       <div className="space-y-6">
         <h4 className="text-white font-bold">Contact Us</h4>
         <div className="space-y-4 text-sm">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 justify-center md:justify-start">
             <Phone className="w-4 h-4 text-gray-500" />
             <span>(555) 123-4567</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 justify-center md:justify-start">
             <Mail className="w-4 h-4 text-gray-500" />
             <span>help@surplusrecovery.org</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 justify-center md:justify-start">
             <MapPin className="w-4 h-4 text-gray-500" />
             <span>Serving Homeowners Nationwide</span>
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <h4 className="text-white font-bold">Tools & Outreach</h4>
+        <div className="flex flex-col gap-3 text-sm text-gray-400">
+          <button onClick={onTogglePoster} className="hover:text-blue-400 transition-colors flex items-center justify-center md:justify-start gap-2">
+            <FileText className="w-4 h-4" /> Printable Poster Mode
+          </button>
+          <a href="#chat-section" className="hover:text-blue-400 transition-colors flex items-center justify-center md:justify-start gap-2">
+            <MessageCircle className="w-4 h-4" /> Chat Assistant
+          </a>
         </div>
       </div>
 
@@ -550,36 +663,50 @@ const Footer = () => (
 
 export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isPosterMode, setIsPosterMode] = useState(false);
 
   const toggleChat = () => setIsChatOpen(!isChatOpen);
+  const togglePoster = () => {
+    setIsPosterMode(!isPosterMode);
+    setIsChatOpen(false);
+    window.scrollTo(0, 0);
+  };
 
   return (
     <div className="min-h-[100dvh] bg-white font-sans text-gray-900 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
-      <Navbar onOpenChat={() => setIsChatOpen(true)} />
+      <Navbar 
+        onOpenChat={() => setIsChatOpen(true)} 
+        onTogglePoster={togglePoster}
+        isPosterMode={isPosterMode}
+      />
       
-      <main>
-        <Hero onOpenChat={() => setIsChatOpen(true)} />
-        <TrustBadges />
-        <HowItWorks />
-        
-        {/* Inline Chat Section (Desktop context) */}
-        <div id="chat-section" className="py-12 md:py-24 px-4 bg-gray-50 flex justify-center">
-          <div className="w-full max-w-2xl h-[600px]">
-            <ChatAssistant />
-            <p className="mt-6 text-center text-xs text-gray-400 italic max-w-md mx-auto">
-              Disclaimer: This does not constitute legal advice. Results may vary based on local regulations.
-            </p>
+      {isPosterMode ? (
+        <PosterMode />
+      ) : (
+        <main>
+          <Hero onOpenChat={() => setIsChatOpen(true)} />
+          <TrustBadges />
+          <HowItWorks />
+          
+          {/* Inline Chat Section (Desktop context) */}
+          <div id="chat-section" className="py-12 md:py-24 px-4 bg-gray-50 flex justify-center">
+            <div className="w-full max-w-2xl h-[600px]">
+              <ChatAssistant />
+              <p className="mt-6 text-center text-xs text-gray-400 italic max-w-md mx-auto">
+                Disclaimer: This does not constitute legal advice. Results may vary based on local regulations.
+              </p>
+            </div>
           </div>
-        </div>
 
-        <FAQ />
-      </main>
+          <FAQ />
+        </main>
+      )}
       
-      <Footer />
+      <Footer onTogglePoster={togglePoster} />
       
       {/* Overlay Chatbot (Minimize/Maximize) */}
       <AnimatePresence>
-        {isChatOpen && (
+        {isChatOpen && !isPosterMode && (
           <motion.div 
             initial={{ opacity: 0, y: 100, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -593,7 +720,7 @@ export default function App() {
 
       {/* Floating Action Button */}
       <AnimatePresence>
-        {!isChatOpen && (
+        {!isChatOpen && !isPosterMode && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
