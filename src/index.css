@@ -1,32 +1,8 @@
-/* 
- * index-v10: Global styles for Surplus Funds Recovery.
- * Updates: Deployment stabilization.
- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,900;1,900&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Outfit", "Inter", sans-serif;
+  --font-serif: "Playfair Display", serif;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap');
-
-html, body {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  -webkit-text-size-adjust: 100%;
-}
-
-html {
-  scroll-behavior: smooth;
-  height: -webkit-fill-available;
-}
-
-body {
-  @apply bg-[#FDFCFB];
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
-}
